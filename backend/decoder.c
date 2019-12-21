@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <inttypes.h>
-#include <Zydis/Zydis.h>
-#include <Zycore/Defines.h>
-#include <Zycore/Types.h>
-#include <Zydis/SharedTypes.h>
-#include <Zydis/ShortString.h>
-
-#include "types.c"
+#include "decoder.h"
 
 ZydisDecoder decoder;
 ZydisFormatter formatter;
@@ -118,7 +110,7 @@ void get_register_value(ZydisRegister reg) { //, x86_thread_state_t *state) { //
     }
 }
 
-void getOperandAction(ZydisDecodedOperand operand) {
+void get_operand_action(ZydisDecodedOperand operand) {
     ZyanU8 action = operand.actions;
     if (action == ZYDIS_OPERAND_ACTION_READ) {
         printf("[READ] ");
@@ -152,7 +144,7 @@ void getOperandAction(ZydisDecodedOperand operand) {
     }
 }
 
-void getOperandType(ZydisDecodedOperand operand) {
+void get_operand_type(ZydisDecodedOperand operand) {
     ZyanU8 action = operand.type;
     if (action == ZYDIS_OPERAND_TYPE_UNUSED) {
         printf("[UNUSED] ");
@@ -171,7 +163,7 @@ void getOperandType(ZydisDecodedOperand operand) {
     }
 }
 
-void getMemoryType(ZydisDecodedOperand operand) {
+void get_memory_type(ZydisDecodedOperand operand) {
     ZydisMemoryOperandType memType = operand.mem.type;
     if (memType == ZYDIS_MEMOP_TYPE_INVALID) {
         // printf("[INVALID] ");
@@ -187,7 +179,7 @@ void getMemoryType(ZydisDecodedOperand operand) {
     }
 }
 
-void getImmiediate(ZydisDecodedOperand operand) {
+void get_immediate(ZydisDecodedOperand operand) {
     long long u = operand.imm.value.u;
     long long s = operand.imm.value.s;
     if (u != 0) {
@@ -198,7 +190,7 @@ void getImmiediate(ZydisDecodedOperand operand) {
     }
 }
 
-void getPointer(ZydisDecodedOperand operand) {
+void get_pointer(ZydisDecodedOperand operand) {
     long long segment = operand.ptr.segment;
     long long offset = operand.ptr.offset;
     if (segment != 0) {
@@ -209,19 +201,19 @@ void getPointer(ZydisDecodedOperand operand) {
     }
 }
 
-void getRegister(ZydisDecodedOperand operand, RegisterBuffer *registers) {
+void get_register(ZydisDecodedOperand operand, register_buffer *registers) {
     long long reg = operand.reg.value;
     if (reg != 0 && reg) {
         registers->append(registers,reg);
     }
 }
 
-void init() {
+void decoder_init() {
     ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
     ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 }
 
-void decode(unsigned long long rip, unsigned long *data, void *buffer, size_t size, x86_thread_state_t *state, RegisterBuffer *registers) {
+void decode(unsigned long long rip, unsigned long *data, void *buffer, size_t size, x86_thread_state_t *state, register_buffer *registers) {
     ZyanUSize offset = 0;
     const ZyanUSize length = 15;
     ZydisDecodedInstruction instruction;
@@ -234,15 +226,9 @@ void decode(unsigned long long rip, unsigned long *data, void *buffer, size_t si
 
         for (ZyanU8 i = 0; i < instruction.operand_count; ++i) {
             ZydisDecodedOperand operand = instruction.operands[i];
-            // printf("\t");
-            // getOperandAction(operand);
-            // getOperandType(operand);
-            // getMemoryType(operand);
-            // getImmiediate(operand);
             if (operand.actions & ZYDIS_OPERAND_ACTION_MASK_WRITE) {
-                getRegister(operand, registers);
+                get_register(operand, registers);
             }
-            // printf("\n");
         }
     } else {
         printf("Could not decode instruction\n");
