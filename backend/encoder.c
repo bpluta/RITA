@@ -44,3 +44,7 @@ void log_memory(int number, uint64_t address, uint64_t value) {
     fwrite(&address, 8, 1, log_file);
     fwrite(&value, 8, 1, log_file);
 }
+
+void log_flush() {
+    fflush(log_file);
+}

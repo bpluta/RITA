@@ -47,6 +47,7 @@ void get_instruction(debug_session *session) {
     char buffer[buffer_size];
     decode_instruction(session, rip,((unsigned long long *)(address)), &buffer, buffer_size);
     log_instruction(session->instruction_count, (void *)(address));
+    log_flush();
 }
 
 int main(int argc, char* argv[]) {

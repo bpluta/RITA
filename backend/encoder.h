@@ -16,5 +16,6 @@ void log_close();
 void log_instruction(int number, void *instruction);
 void log_register(int number, uint8_t register_type, uint64_t value);
 void log_memory(int number, uint64_t address, uint64_t value);
+void log_flush();
 
 #endif
