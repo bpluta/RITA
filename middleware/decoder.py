@@ -66,11 +66,16 @@ class Decoder:
     def close(self):
         self.inputFile.close()
 
-decoder = Decoder(TRACE_FILE_PATH)
-decoder.open()
+def main():
+    decoder = Decoder(TRACE_FILE_PATH)
+    decoder.open()
 
-while decoder.nextInstruction():
-    if decoder.currentInstruction:
-        print(str(decoder.currentInstruction.id) + " :: " + decoder.currentInstruction.description)
+    while decoder.nextInstruction():
+        if decoder.currentInstruction:
+            print(str(decoder.currentInstruction.id) + " :: " + decoder.currentInstruction.description)
 
-decoder.close()
+    decoder.close()
+
+
+if __name__ == '__main__':
+    main()
