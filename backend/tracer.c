@@ -3,21 +3,38 @@
 #include "dyld_data.h"
 #include "decoder.h"
 #include "encoder.h"
+#include "process.h"
 
 #define LOGFILE_PATH "./traces/trace"
 
-void get_saved_registers(register_buffer *registers) {
+void get_saved_registers(debug_session *session) {
+    register_buffer *registers = &session->recently_modified_registers;
     if (!registers->count) { return; }
     printf("\t::");
     for (int i=0; i<registers->count; i++) {
-        get_register_value(registers->data[i]);
+        printf("%s :: %llx | ", get_register_name(registers->data[i]), get_register_val(session, registers->data[i]));
     }
     printf("\n");
     registers->clear(registers);
 }
 
+void get_saved_memory(debug_session *session) {
+    if (!session->recently_modified_memory.length) { return; }
+    printf("\t::");
+    node *element = session->recently_modified_memory.head;
+    while (element) {
+        uint64_t address = *(uint64_t*)element->data;
+        uint64_t value = *read_memory(session->task, (mach_vm_address_t) address, sizeof(uint64_t));
+        printf(" %llx -> %llx", address, value);
+        element = element->next;
+    }
+    printf("\n");
+    delete_list(&session->recently_modified_memory);
+}
+
 void get_instruction(debug_session *session) {
-    get_saved_registers(&session->recently_modified_registers);
+    get_saved_registers(session);
+    get_saved_memory(session);
     unsigned long long rip = session->current_state.uts.ts64.__rip;
     uintptr_t address = 0;
 
@@ -29,7 +46,7 @@ void get_instruction(debug_session *session) {
     }
     int buffer_size = 256;
     char buffer[buffer_size];
-    decode(rip,((unsigned long long *)(address)), &buffer, buffer_size, &session->current_state, &session->recently_modified_registers);
+    decode(session, rip,((unsigned long long *)(address)), &buffer, buffer_size, &session->current_state, &session->recently_modified_registers, &session->recently_modified_memory);
     log_instruction(session->instruction_count, (void *)(address));
 }
 

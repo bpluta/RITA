@@ -35,7 +35,7 @@ static void _register_buffer_clear(register_buffer *self) {
 }
 
 static void _register_buffer_free(register_buffer *self) {
-    free(self->data);
+    // free(self->data);
 }
 
 static void _register_buffer_reinit(register_buffer *self) {

@@ -19,6 +19,9 @@ void delete_list(list *list) {
         free(element);
         element = next;
     }
+    list->head = NULL;
+    list->tail = NULL;
+    list->length = 0;
 }
 
 void list_append(list *list, void *element) {

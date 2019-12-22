@@ -20,6 +20,7 @@ struct _debug_session {
     uint64_t instruction_count;
     x86_thread_state_t current_state;
     register_buffer recently_modified_registers;
+    list recently_modified_memory;
 
     list breakpoints;
     list executable_libs;
