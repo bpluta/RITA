@@ -2,48 +2,34 @@
 
 int instruction_counter = 0;
 
-void debug(debug_session *session, void (*callback)(debug_session*)) { // make callback here
+void debug(debug_session *session, void (*callback)(debug_session*)) {
     thread_act_array_t threads = NULL;
+    thread_act_t current_thread = NULL;
+    x86_thread_state_t state;
+    unsigned long long current_pointer;
+    unsigned long long amountOfInstructions = 0;
+    double cpu_time_used;
+    clock_t start, end;
+
     get_threads(&session->task, &threads);
-    thread_act_t current_thread = (thread_act_t)threads[0];
+    current_thread = (thread_act_t)threads[0];
     session->thread = current_thread;
 
-    x86_thread_state_t state;
     get_state(&session->thread, &state);
-
-    unsigned long long current_pointer = (unsigned long long)state.uts.ts64.__rip;
-    printf("Start position : %#016llx\n", current_pointer);
-
-    printf("%#016llx :: %#016llx\n", current_pointer, session->entry_point);
-
-    clock_t start, end;
-    double cpu_time_used;
-    printf("clock start\n");
-
-    start = clock();
+    current_pointer = (unsigned long long)state.uts.ts64.__rip;
 
     set_hardware_watchpoint(session, session->entry_point, 0, HW_BREAKPOINT_TYPE_X, 8);
 
     if (!continue_until_breakpoint(session)) {
         printf("continue failed!\n");
     }
-
     clear_hardware_watchpoint(session);
 
     get_state(&session->thread, &state);
     current_pointer = (unsigned long long)state.uts.ts64.__rip;
 
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("Time spent :: %lf\n", cpu_time_used);
-    printf("Current position : %#016llx\n", current_pointer);
-    printf("\n===============================================\n\n");
-
-    // printf("PID :: %d\n",session->pid);
-    // sleep(20);
-
-    unsigned long long amountOfInstructions = 0;
     unsigned long long current_stack_pointer, initial_stack_pointer = (unsigned long long)state.uts.ts64.__rsp;
+    uint64_t rip = (uint64_t)state.uts.ts64.__rip;
 
     getLinkedLibraries(session);
 
@@ -54,12 +40,15 @@ void debug(debug_session *session, void (*callback)(debug_session*)) { // make c
         debug_wait(session->pid);
         get_state(&current_thread, &state);
         current_stack_pointer = (unsigned long long)state.uts.ts64.__rsp;
+        rip = (uint64_t)state.uts.ts64.__rip;
 
-        if (!is_overable(session, (unsigned long long)state.uts.ts64.__rip)) {
+        if (!is_overable(session, rip)) {
 
             amountOfInstructions += 1;
             session->instruction_count += 1;
             session->current_state = state;
+            session->current_instruction_pointer = rip;
+
             if (callback) {
                 callback(session);
             }
@@ -69,7 +58,7 @@ void debug(debug_session *session, void (*callback)(debug_session*)) { // make c
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("Time spent :: %lf\n", cpu_time_used);
-    printf("Instructions skipped :: %llu\n", amountOfInstructions);
+    printf("Instructions processed :: %llu\n", amountOfInstructions);
     printf("Current position : %#016llx\n", current_pointer);
 }
 
@@ -166,12 +155,12 @@ bool continue_until_breakpoint(debug_session *session) {
         reason = debug_wait(session->pid);
 
         if (reason == R_DEBUG_REASON_BREAKPOINT) {
-            printf("HIT BREAKPOINT!\n");
+            printf("HIT BREAKPOINT\n");
             break;
         }
 
         if (reason == R_DEBUG_REASON_DEAD) {
-            printf("DEBUG DEAD!\n");
+            printf("DEBUG DEAD\n");
             return false;
         }
     }

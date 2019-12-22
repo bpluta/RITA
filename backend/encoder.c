@@ -22,9 +22,25 @@ void log_instruction(int number, void *instruction) {
     fwrite(&null_byte, 1, 1, log_file);
 }
 
-// void log_register(int number, void *register, long long value) {
-//     char type = INSTRUCTION_MASK;
-//     fwrite(&number, 4, sizeof(number), log_file);
-//     fwrite(&type, 1, sizeof(curr_char), log_file);
-//     fwrite(instruction, 15, sizeof(curr_char), log_file);
-// }
+void log_register(int number, uint8_t register_type, uint64_t value) {
+    char type = REGISTER_MASK;
+    char null_byte = 0;
+
+    fwrite(&number, 4, 1, log_file);
+    fwrite(&type, 1, 1, log_file);
+    fwrite(&register_type, 1, 1, log_file);
+    fwrite(&value, 8, 1, log_file);
+    for (int i=0; i<7; i++) {
+        fwrite(&null_byte, 1, 1, log_file);
+    }
+}
+
+void log_memory(int number, uint64_t address, uint64_t value) {
+    char type = MEMORY_MASK;
+    char null_byte = 0;
+
+    fwrite(&number, 4, 1, log_file);
+    fwrite(&type, 1, 1, log_file);
+    fwrite(&address, 8, 1, log_file);
+    fwrite(&value, 8, 1, log_file);
+}

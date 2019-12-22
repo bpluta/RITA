@@ -51,7 +51,7 @@ char *get_register_name(register_type reg) {
     return "";
 }
 
-uint64_t get_register_val(debug_session *session, register_type reg) {
+uint64_t get_register_value(debug_session *session, register_type reg) {
     switch (reg) {
         case REGISTER_RAX:
             return (uint64_t)session->current_state.uts.ts64.__rax;
@@ -99,7 +99,7 @@ uint64_t get_register_val(debug_session *session, register_type reg) {
     return 0LL;
 }
 
-register_type get_register_value(ZydisRegister reg) {
+register_type convert_register_type(ZydisRegister reg) {
     if (!(reg^ZYDIS_REGISTER_AL) || !(reg^ZYDIS_REGISTER_AH) || !(reg^ZYDIS_REGISTER_AX) || !(reg^ZYDIS_REGISTER_EAX) || !(reg^ZYDIS_REGISTER_RAX)) {
         return REGISTER_RAX;
     }
@@ -278,10 +278,10 @@ void get_pointer(ZydisDecodedOperand operand) {
     }
 }
 
-void get_register(ZydisDecodedOperand operand, register_buffer *registers) {
+void get_register(debug_session *session, ZydisDecodedOperand operand) {
     if (operand.reg.value) {
-        register_type reg = get_register_value(operand.reg.value);
-        registers->append(registers,reg);
+        register_type reg = convert_register_type(operand.reg.value);
+        session->recently_modified_registers.append(&session->recently_modified_registers,reg);
     }
 }
 
@@ -292,15 +292,15 @@ void get_memory(debug_session *session, ZydisDecodedOperand operand) {
     uint64_t index = 0;
 
     if (operand.mem.base) {
-        register_type reg = get_register_value(operand.mem.base);
+        register_type reg = convert_register_type(operand.mem.base);
         if (reg) {
-            base = get_register_val(session, reg);
+            base = get_register_value(session, reg);
         }
     }
     if (operand.mem.index) {
-        register_type reg = get_register_value(operand.mem.index);
+        register_type reg = convert_register_type(operand.mem.index);
         if (reg) {
-            index = get_register_val(session, reg);
+            index = get_register_value(session, reg);
         }
     }
 
@@ -316,7 +316,7 @@ void decoder_init() {
     ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 }
 
-void decode(debug_session *session, unsigned long long rip, unsigned long *data, void *buffer, size_t size, x86_thread_state_t *state, register_buffer *registers, list *memory) {
+void decode_instruction(debug_session *session, unsigned long long rip, unsigned long *data, void *buffer, size_t size) {
 
     ZyanUSize offset = 0;
     const ZyanUSize length = 15;
@@ -331,7 +331,7 @@ void decode(debug_session *session, unsigned long long rip, unsigned long *data,
         for (ZyanU8 i = 0; i < instruction.operand_count; ++i) {
             ZydisDecodedOperand operand = instruction.operands[i];
             if (operand.actions & ZYDIS_OPERAND_ACTION_MASK_WRITE) {
-                get_register(operand, registers);
+                get_register(session, operand);
                 get_memory(session, operand);
             }
         }

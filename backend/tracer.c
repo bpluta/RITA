@@ -9,44 +9,43 @@
 
 void get_saved_registers(debug_session *session) {
     register_buffer *registers = &session->recently_modified_registers;
-    if (!registers->count) { return; }
-    printf("\t::");
+    if (!registers->count) return;
     for (int i=0; i<registers->count; i++) {
-        printf("%s :: %llx | ", get_register_name(registers->data[i]), get_register_val(session, registers->data[i]));
+        uint64_t value = get_register_value(session, registers->data[i]);
+        uint8_t register_type = registers->data[i];
+        printf("\t[ REGISTER ] %s -> %llx\n", get_register_name(register_type), value);
+        log_register(session->instruction_count, register_type, value);
     }
-    printf("\n");
     registers->clear(registers);
 }
 
 void get_saved_memory(debug_session *session) {
-    if (!session->recently_modified_memory.length) { return; }
-    printf("\t::");
+    if (!session->recently_modified_memory.length) return;
     node *element = session->recently_modified_memory.head;
     while (element) {
         uint64_t address = *(uint64_t*)element->data;
         uint64_t value = *read_memory(session->task, (mach_vm_address_t) address, sizeof(uint64_t));
-        printf(" %llx -> %llx", address, value);
+        printf("\t[ MEMORY ] %llx -> %llx\n", address, value);
+        log_memory(session->instruction_count, address, value);
         element = element->next;
     }
-    printf("\n");
     delete_list(&session->recently_modified_memory);
 }
 
 void get_instruction(debug_session *session) {
+    session->recently_modified_registers.append(&session->recently_modified_registers, REGISTER_RIP);
     get_saved_registers(session);
     get_saved_memory(session);
-    unsigned long long rip = session->current_state.uts.ts64.__rip;
-    uintptr_t address = 0;
+    unsigned long long rip = session->current_instruction_pointer;
 
-    mach_msg_type_number_t num = 15;
-    kern_return_t err = vm_read(session->task, rip, 15, &address, &num);
-    if (err != KERN_SUCCESS) {
+    uintptr_t address = read_memory(session->task, (mach_vm_address_t) rip, INSTRUCTION_MAX_SIZE);
+    if (!address) {
         printf("mach_vm_read failed\n");
         return;
     }
     int buffer_size = 256;
     char buffer[buffer_size];
-    decode(session, rip,((unsigned long long *)(address)), &buffer, buffer_size, &session->current_state, &session->recently_modified_registers, &session->recently_modified_memory);
+    decode_instruction(session, rip,((unsigned long long *)(address)), &buffer, buffer_size);
     log_instruction(session->instruction_count, (void *)(address));
 }
 

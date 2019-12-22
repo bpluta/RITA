@@ -42,14 +42,15 @@ typedef enum _register_type {
 
 void decoder_init();
 char *get_register_name(register_type reg);
-register_type get_register_value(ZydisRegister reg);
-uint64_t get_register_val(debug_session *session, register_type reg);
+register_type convert_register_type(ZydisRegister reg);
+uint64_t get_register_value(debug_session *session, register_type reg);
 void get_operand_action(ZydisDecodedOperand operand);
 void get_operand_type(ZydisDecodedOperand operand);
 void get_memory_type(ZydisDecodedOperand operand);
 void get_immediate(ZydisDecodedOperand operand);
 void get_pointer(ZydisDecodedOperand operand);
-void get_register(ZydisDecodedOperand operand, register_buffer *registers);
-void decode(debug_session *session, unsigned long long rip, unsigned long *data, void *buffer, size_t size, x86_thread_state_t *state, register_buffer *registers, list *memory);
+void get_register(debug_session *session, ZydisDecodedOperand operand);
+void get_memory(debug_session *session, ZydisDecodedOperand operand);
+void decode_instruction(debug_session *session, unsigned long long rip, unsigned long *data, void *buffer, size_t size);
 
 #endif

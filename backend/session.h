@@ -17,7 +17,9 @@ struct _debug_session {
     mach_port_t task;
     thread_act_t thread;
     uint64_t entry_point;
+
     uint64_t instruction_count;
+    uint64_t current_instruction_pointer;
     x86_thread_state_t current_state;
     register_buffer recently_modified_registers;
     list recently_modified_memory;
