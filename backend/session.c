@@ -3,6 +3,7 @@
 void init_debug_session(debug_session *session) {
     session->instruction_count = 0;
     session->current_instruction_pointer = 0;
+    session->should_dump_all_registers = false;
     session->recently_modified_registers = register_buffer_init();
     new_list(&session->breakpoints, sizeof(breakpoint));
     new_list(&session->executable_libs, sizeof(executable_library_info));

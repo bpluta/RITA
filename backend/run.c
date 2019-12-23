@@ -33,8 +33,9 @@ void debug(debug_session *session, void (*callback)(debug_session*)) {
 
     getLinkedLibraries(session);
 
-    start = clock();
+    session->should_dump_all_registers = true;
     amountOfInstructions = 0;
+    start = clock();
     do {
         step(&session->task, &session->thread, &state);
         debug_wait(session->pid);

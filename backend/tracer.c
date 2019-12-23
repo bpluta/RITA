@@ -32,8 +32,19 @@ void get_saved_memory(debug_session *session) {
     delete_list(&session->recently_modified_memory);
 }
 
+void dump_all_registers(debug_session *session) {
+    for (int reg=REGISTER_RAX; reg<=REGISTER_GS; reg++) {
+        session->recently_modified_registers.append(&session->recently_modified_registers, reg);
+    }
+    session->should_dump_all_registers = false;
+}
+
 void get_instruction(debug_session *session) {
-    session->recently_modified_registers.append(&session->recently_modified_registers, REGISTER_RIP);
+    if (session->should_dump_all_registers) {
+        dump_all_registers(session);
+    } else {
+        session->recently_modified_registers.append(&session->recently_modified_registers, REGISTER_RIP);
+    }
     get_saved_registers(session);
     get_saved_memory(session);
     unsigned long long rip = session->current_instruction_pointer;

@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include <mach/mach.h>
+#include <stdbool.h>
+
 #include "list.h"
 #include "types.h"
 
@@ -21,6 +23,7 @@ struct _debug_session {
     uint64_t instruction_count;
     uint64_t current_instruction_pointer;
     x86_thread_state_t current_state;
+    bool should_dump_all_registers;
     register_buffer recently_modified_registers;
     list recently_modified_memory;
 
