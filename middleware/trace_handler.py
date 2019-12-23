@@ -14,7 +14,9 @@ class Trace:
         self.traces.append(bytes)
 
     def isEmpty(self):
-        return self.traces
+        if self.traces:
+            return len(self.traces) == 0
+        return True
 
 class TraceHandler:
     def __init__(self, path):
@@ -30,10 +32,20 @@ class TraceHandler:
     def getSize(self):
         return os.path.getsize(self.path)
 
-    def getCommits(self, amount, fromIndex):
+    def getPreviousCommits(self, amount, fromIndex, includeBound = True):
+        offset = 0
+        if not includeBound:
+            offset = 1
+
+        initialIndex = fromIndex + offset
+
+        lastIndex = self.getIndexOfLine(self.getLastLineOffset())
+        if initialIndex > lastIndex:
+            initialIndex = lastIndex
+
         commits = []
-        position = self.findCommit(fromIndex)
-        commit = Trace(fromIndex)
+        position = self.findCommit(initialIndex)
+        commit = Trace(initialIndex)
 
         while position != None:
             currentIndex = self.getIndexOfLine(position)
@@ -41,7 +53,43 @@ class TraceHandler:
 
             if currentIndex == None or commit == None:
                 break
-            if currentIndex > fromIndex + amount:
+            if currentIndex < initialIndex - amount:
+                break
+
+            if currentIndex < commit.index:
+                commits.append(commit)
+                commit = Trace(currentIndex)
+
+            commit.addTrace(trace)
+
+            position = self.getPreviousLine(position)
+
+        if commit.isEmpty() == False:
+            commits.append(commit)
+
+        return commits[::-1]
+
+
+    def getNextCommits(self, amount, fromIndex, includeBound = True):
+        offset = 0
+        if not includeBound:
+            offset = 1
+
+        initialIndex = fromIndex + offset
+        if initialIndex < 1:
+            initialIndex = 1
+
+        commits = []
+        position = self.findCommit(initialIndex)
+        commit = Trace(initialIndex)
+
+        while position != None:
+            currentIndex = self.getIndexOfLine(position)
+            currentIndex, trace = self.readTrace(position)
+
+            if currentIndex == None or commit == None:
+                break
+            if currentIndex >= initialIndex + amount:
                 break
 
             if currentIndex > commit.index:
@@ -52,7 +100,7 @@ class TraceHandler:
 
             position = self.getNextLine(position)
 
-        if commit.isEmpty == False:
+        if commit.isEmpty() == False:
             commits.append(commit)
 
         return commits
@@ -169,14 +217,15 @@ class TraceHandler:
 
 def main():
     trace = TraceHandler(TRACE_FILE_PATH)
-
-    for index in range(0,50):
-        commit = trace.findCommit(index)
-        if commit != None:
-            print("commit " + str(index) + " :: line " + str(int(commit/COMMIT_LINE_SIZE)))
-
+    
     print("\nCommits\n")
-    commits = trace.getCommits(5,16)
+    commits = trace.getNextCommits(100,0)
+    for index in range(0,len(commits)):
+        print("index : " + str(commits[index].index) + " :::: amount : " + str(len(commits[index].traces)))
+
+    print("")
+
+    commits = trace.getPreviousCommits(100,100)
     for index in range(0,len(commits)):
         print("index : " + str(commits[index].index) + " :::: amount : " + str(len(commits[index].traces)))
 

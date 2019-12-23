@@ -88,7 +88,7 @@ def main():
     decoder = Decoder()
     trace = TraceHandler(TRACE_FILE_PATH)
 
-    commits = trace.getCommits(20,1)
+    commits = trace.getNextCommits(20,1)
 
     for index in range(0,len(commits)):
         commit = decoder.decodeCommit(commits[index])
