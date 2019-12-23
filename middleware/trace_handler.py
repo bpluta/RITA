@@ -1,8 +1,20 @@
 import os
 import math
+import binascii
 
 TRACE_FILE_PATH = "../traces/trace"
 COMMIT_LINE_SIZE = 21
+
+class Trace:
+    def __init__(self, index):
+        self.index = index
+        self.traces = []
+
+    def addTrace(self, bytes):
+        self.traces.append(bytes)
+
+    def isEmpty(self):
+        return self.traces
 
 class TraceHandler:
     def __init__(self, path):
@@ -17,6 +29,33 @@ class TraceHandler:
 
     def getSize(self):
         return os.path.getsize(self.path)
+
+    def getCommits(self, amount, fromIndex):
+        commits = []
+        position = self.findCommit(fromIndex)
+        commit = Trace(fromIndex)
+
+        while position != None:
+            currentIndex = self.getIndexOfLine(position)
+            currentIndex, trace = self.readTrace(position)
+
+            if currentIndex == None or commit == None:
+                break
+            if currentIndex > fromIndex + amount:
+                break
+
+            if currentIndex > commit.index:
+                commits.append(commit)
+                commit = Trace(currentIndex)
+
+            commit.addTrace(trace)
+
+            position = self.getNextLine(position)
+
+        if commit.isEmpty == False:
+            commits.append(commit)
+
+        return commits
 
     def findCommit(self, index):
         lower = 0
@@ -90,6 +129,17 @@ class TraceHandler:
         self.fd.seek(initialPosition)
         return position
 
+    def getNextLine(self, offset):
+        size = self.getSize()
+        newLine = self.alignToBeginOfCommmitLine(offset)
+        lastLine = self.getLastLineOffset()
+
+        if newLine == lastLine:
+            return None
+
+        newLine += COMMIT_LINE_SIZE
+        return newLine
+
     def getPreviousLine(self, offset):
         if offset < COMMIT_LINE_SIZE:
             return None
@@ -98,6 +148,12 @@ class TraceHandler:
 
     def readInt(self, size):
         return int.from_bytes(self.fd.read(size), "little")
+
+    def readTrace(self, offset):
+        self.fd.seek(offset)
+        index = self.readInt(4)
+        data = bytearray(self.fd.read(COMMIT_LINE_SIZE))
+        return index, data
 
     def getLastLineOffset(self):
         size = self.getSize()
@@ -118,6 +174,11 @@ def main():
         commit = trace.findCommit(index)
         if commit != None:
             print("commit " + str(index) + " :: line " + str(int(commit/COMMIT_LINE_SIZE)))
+
+    print("\nCommits\n")
+    commits = trace.getCommits(5,16)
+    for index in range(0,len(commits)):
+        print("index : " + str(commits[index].index) + " :::: amount : " + str(len(commits[index].traces)))
 
 if __name__ == '__main__':
     main()

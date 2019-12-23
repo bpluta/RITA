@@ -16,7 +16,8 @@ void init() {
 
 void decodeInstruction(char *data, long long rip, char *buffer, size_t size) {
     ZydisDecodedInstruction instruction;
+    ZyanU64 program_counter = rip ? (ZyanU64)rip : ZYDIS_RUNTIME_ADDRESS_NONE;
     if (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, data, INSTRUCTION_LENGTH, &instruction))) {
-        ZydisFormatterFormatInstruction(&formatter, &instruction, buffer, size, ZYDIS_RUNTIME_ADDRESS_NONE);
+        ZydisFormatterFormatInstruction(&formatter, &instruction, buffer, size, program_counter);
     }
 }
