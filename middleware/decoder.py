@@ -92,6 +92,30 @@ class Decoder:
 
         return MemoryCommit(address,value)
 
+    def getMemoryDump(self, tracer):
+        memory = {}
+        traces = tracer.getNextCommits(DEFAULT_PAGE_SIZE, 0, True)
+
+        while True:
+            for i in range(0,len(traces)):
+                index = traces[i].index
+                commitMemory = self.getAllTraceMemory(traces[i])
+                for commitMemoryAddress in commitMemory:
+                    commitData = CommitData(index, commitMemory[commitMemoryAddress])
+                    if commitMemoryAddress in memory:
+                        memory[commitMemoryAddress].append(commitData)
+                    else:
+                        memory[commitMemoryAddress] = [commitData]
+
+            if len(traces):
+                if not tracer.hasMoreAfter(traces[-1].index):
+                    break
+            else:
+                break
+
+            traces = tracer.getNextCommits(DEFAULT_PAGE_SIZE, index, True)
+        return memory
+
     def getAllRegisters(self, index, tracer):
         registers = {}
         for register in Register:
@@ -126,12 +150,30 @@ class Decoder:
             return {}
 
         for index in range(0,len(traces)):
-            register = self.decodeRegister(traces[index])
-            if register:
-                if register.register:
-                    registers[register.register.name] = register.value
+            type = struct.unpack('<B', traces[index][TYPE_RANGE])[0]
+            if not (type ^ REG_MASK):
+                register = self.decodeRegister(traces[index])
+                if register:
+                    if register.register:
+                        registers[register.register.name] = register.value
 
         return registers
+
+    def getAllTraceMemory(self, commit):
+        memoryMap = {}
+        traces = commit.traces
+        if not traces:
+            return {}
+
+        for index in range(0,len(traces)):
+            type = struct.unpack('<B', traces[index][TYPE_RANGE])[0]
+            if not (type ^ MEM_MASK):
+                memoryCommit = self.decodeMemory(traces[index])
+                if memoryCommit:
+                    if memoryCommit.address:
+                        memoryMap[memoryCommit.address] = memoryCommit.value
+
+        return memoryMap
 
 def main():
     decoder = Decoder()
@@ -154,6 +196,17 @@ def main():
             value = hex(value)
 
         print(register + " -> " + value)
+
+    print("")
+    memory = decoder.getMemoryDump(tracer)
+
+    for address in memory:
+        commits = memory[address]
+        print("ADDRESS " + hex(address))
+        for index in range(0, len(commits)):
+            commitIndex = commits[index].index
+            value = commits[index].value
+            print("\t" + str(commitIndex) + ") " + hex(value))
 
 if __name__ == '__main__':
     main()

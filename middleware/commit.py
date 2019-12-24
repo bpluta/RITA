@@ -32,3 +32,8 @@ class MemoryCommit:
 class InstructionCommit:
     def __init__(self, value):
         self.value = value
+
+class CommitData:
+    def __init__(self, index, value):
+        self.index = index
+        self.value = value
