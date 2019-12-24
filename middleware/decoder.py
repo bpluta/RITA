@@ -23,6 +23,8 @@ REGISTER_VALUE_RANGE = slice(2,10)
 MEMORY_ADDRESS_RANGE = slice(1,9)
 MEMORY_VALUE_RANGE = slice(9,17)
 
+DEFAULT_PAGE_SIZE = 10
+
 class Decoder:
     def __init__(self):
         libdecoder.init();
@@ -35,12 +37,21 @@ class Decoder:
 
     def decodeTrace(self, commit, trace):
         type = struct.unpack('<B', trace[TYPE_RANGE])[0]
+
         if not (type ^ INS_MASK):
-            self.decodeInstruction(commit, trace)
+            instruction = self.decodeInstruction(commit, trace)
+            if instruction:
+                commit.instruction = instruction
+
         if not (type ^ REG_MASK):
-            self.decodeRegister(commit, trace)
+            register = self.decodeRegister(trace)
+            if register:
+                commit.registers.append(register)
+
         if not (type ^ MEM_MASK):
-            self.decodeMemory(commit, trace)
+            memory = self.decodeMemory(trace)
+            if memory:
+                commit.memory.append(memory)
 
 
     def decodeInstruction(self, commit, trace):
@@ -54,7 +65,7 @@ class Decoder:
                 break
 
         if not instruction or not programCounter:
-            return
+            return None
 
         opcode = c_char_p(instruction)
         buffer = cast(create_string_buffer(INSTRUCTION_BUFFER_SIZE), POINTER(c_char))
@@ -64,35 +75,85 @@ class Decoder:
         libdecoder.decodeInstruction(opcode, address, buffer, size)
         description = cast(buffer,c_char_p).value.decode("utf-8")
 
-        commit.instruction = InstructionCommit(description)
+        return InstructionCommit(description)
 
-    def decodeRegister(self, commit, trace):
+    def decodeRegister(self, trace):
         register = struct.unpack('<B', trace[REGISTER_TYPE_RANGE])[0]
         value = struct.unpack('<Q', trace[REGISTER_VALUE_RANGE])[0]
 
         name = ""
         register = Register.getRegister(register)
-        if register:
-            name = register.name
 
-        commit.registers.append(RegisterCommit(register,value))
+        return RegisterCommit(register,value)
 
-    def decodeMemory(self, commit, trace):
+    def decodeMemory(self, trace):
         address = struct.unpack('<Q', trace[MEMORY_ADDRESS_RANGE])[0]
         value = struct.unpack('<Q', trace[MEMORY_VALUE_RANGE])[0]
 
-        commit.memory.append(MemoryCommit(address,value))
+        return MemoryCommit(address,value)
 
+    def getAllRegisters(self, index, tracer):
+        registers = {}
+        for register in Register:
+            registers[register.name] = None
+        registersLeft = len(registers)
+
+        traces = tracer.getPreviousCommits(DEFAULT_PAGE_SIZE, index, True)[::-1]
+
+        while registersLeft > 0:
+            for i in range(0,len(traces)):
+                commitRegisters = self.getAllTraceRegisters(traces[i])
+                for commitRgisterName in commitRegisters:
+                    if commitRgisterName in registers:
+                        if registers[commitRgisterName] == None:
+                            registers[commitRgisterName] = commitRegisters[commitRgisterName]
+                            registersLeft -= 1
+            if len(traces):
+                if not tracer.hasMoreBefore(traces[-1].index):
+                    break
+            else:
+                break
+
+            index = traces[-1].index
+            traces = tracer.getPreviousCommits(DEFAULT_PAGE_SIZE,index, False)[::-1]
+
+        return registers
+
+    def getAllTraceRegisters(self, commit):
+        registers = {}
+        traces = commit.traces
+        if not traces:
+            return {}
+
+        for index in range(0,len(traces)):
+            register = self.decodeRegister(traces[index])
+            if register:
+                if register.register:
+                    registers[register.register.name] = register.value
+
+        return registers
 
 def main():
     decoder = Decoder()
-    trace = TraceHandler(TRACE_FILE_PATH)
+    tracer = TraceHandler(TRACE_FILE_PATH)
 
-    commits = trace.getNextCommits(20,1)
+    commits = tracer.getNextCommits(100,1)
 
     for index in range(0,len(commits)):
         commit = decoder.decodeCommit(commits[index])
         commit.printCommit()
+
+    print("")
+    registers = decoder.getAllRegisters(5, tracer)
+
+    for register in registers:
+        value = registers[register]
+        if value == None:
+            value = "NONE"
+        else:
+            value = hex(value)
+
+        print(register + " -> " + value)
 
 if __name__ == '__main__':
     main()

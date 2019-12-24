@@ -37,14 +37,14 @@ class TraceHandler:
         if not includeBound:
             offset = 1
 
-        initialIndex = fromIndex + offset
+        initialIndex = fromIndex - offset
 
         lastIndex = self.getIndexOfLine(self.getLastLineOffset())
         if initialIndex > lastIndex:
             initialIndex = lastIndex
 
         commits = []
-        position = self.findCommit(initialIndex)
+        position = self.getLastLineOfCommit(self.findCommit(initialIndex))
         commit = Trace(initialIndex)
 
         while position != None:
@@ -53,7 +53,7 @@ class TraceHandler:
 
             if currentIndex == None or commit == None:
                 break
-            if currentIndex < initialIndex - amount:
+            if currentIndex <= initialIndex - amount:
                 break
 
             if currentIndex < commit.index:
@@ -194,6 +194,18 @@ class TraceHandler:
         line = offset - COMMIT_LINE_SIZE
         return self.alignToBeginOfCommmitLine(line)
 
+    def getLastLineOfCommit(self, offset):
+        position = self.alignToBeginOfCommmitLine(offset)
+        initialIndex = self.getIndexOfLine(position)
+        currentPosition = position
+        while currentPosition:
+            index = self.getIndexOfLine(currentPosition)
+            if index != initialIndex:
+                break
+            position = currentPosition
+            currentPosition = self.getNextLine(currentPosition)
+        return position
+
     def readInt(self, size):
         return int.from_bytes(self.fd.read(size), "little")
 
@@ -215,17 +227,31 @@ class TraceHandler:
     def alignToBeginOfCommmitLine(self, position):
         return position - (position % COMMIT_LINE_SIZE)
 
+    def hasMoreBefore(self, index):
+        firstIndex = self.getIndexOfLine(0)
+        if firstIndex:
+            if index > firstIndex:
+                return True
+        return False
+
+    def hasMoreAfter(self, index):
+        lastIndex = self.getIndexOfLine(self.getLastLineOffset())
+        if lastIndex:
+            if index < lastIndex:
+                return True
+        return False
+
 def main():
     trace = TraceHandler(TRACE_FILE_PATH)
-    
+
     print("\nCommits\n")
-    commits = trace.getNextCommits(100,0)
+    commits = trace.getNextCommits(3,8)
     for index in range(0,len(commits)):
         print("index : " + str(commits[index].index) + " :::: amount : " + str(len(commits[index].traces)))
 
     print("")
 
-    commits = trace.getPreviousCommits(100,100)
+    commits = trace.getPreviousCommits(3,10,True)
     for index in range(0,len(commits)):
         print("index : " + str(commits[index].index) + " :::: amount : " + str(len(commits[index].traces)))
 
