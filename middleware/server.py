@@ -30,12 +30,54 @@ def validate(json, keys):
 def index():
     return render_template("index.html")
 
+@socketio.on("hasMore")
+def hasMore(request):
+    data = parseJSON(request)
+
+    if not validate(data, ["index", "type"]):
+        response = { 'error': 'missing values' }
+        socketio.emit('hasMore', str(response))
+        return
+
+    index = data["index"]
+    type = data["type"]
+
+    hasMore = False
+
+    if type == "after":
+        hasMore = tracer.hasMoreAfter(index)
+    elif type == "before":
+        hasMore = tracer.hasMoreBefore(index)
+    else:
+        response = { 'error': 'unknown type' }
+        socketio.emit('hasMore', str(response))
+        return
+
+    response = { "hasMore": hasMore }
+    socketio.emit("hasMore", json.dumps(response))
+
+@socketio.on('memoryDump')
+def getMemory(request):
+    memory, lastIndex = decoder.getMemoryDump(tracer)
+    memoryArray = {}
+
+    for address in memory:
+        key = hex(address)
+        commits = memory[address]
+        memoryArray[key] = []
+        for index in range(0, len(commits)):
+            memoryArray[key].append(commits[index].toDictionary())
+
+    response = { "memory": memoryArray, 'lastIndex': lastIndex }
+    socketio.emit('commits', json.dumps(response))
+
 @socketio.on('commits')
 def getCommits(request):
     data = parseJSON(request)
     if not validate(data, ["index", "amount"]):
         response = { 'error': 'missing values' }
         socketio.emit('commits', str(response))
+        return
 
     index = data["index"]
     amount = data["amount"]

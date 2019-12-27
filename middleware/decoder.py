@@ -92,9 +92,10 @@ class Decoder:
 
         return MemoryCommit(address,value)
 
-    def getMemoryDump(self, tracer):
+    def getMemoryDump(self, tracer): # TODO: upperbound range
         memory = {}
         traces = tracer.getNextCommits(DEFAULT_PAGE_SIZE, 0, True)
+        index = 0
 
         while True:
             for i in range(0,len(traces)):
@@ -113,8 +114,9 @@ class Decoder:
             else:
                 break
 
-            traces = tracer.getNextCommits(DEFAULT_PAGE_SIZE, index, True)
-        return memory
+            traces = tracer.getNextCommits(DEFAULT_PAGE_SIZE, index, False)
+
+        return memory, index
 
     def getAllRegisters(self, index, tracer):
         registers = {}
@@ -172,7 +174,7 @@ class Decoder:
                 if memoryCommit:
                     if memoryCommit.address:
                         memoryMap[memoryCommit.address] = memoryCommit.value
-
+                        
         return memoryMap
 
 def main():
@@ -198,7 +200,7 @@ def main():
         print(register + " -> " + value)
 
     print("")
-    memory = decoder.getMemoryDump(tracer)
+    memory, lastIndex = decoder.getMemoryDump(tracer)
 
     for address in memory:
         commits = memory[address]

@@ -74,5 +74,5 @@ class CommitData:
     def toDictionary(self):
         return {
             "index": self.index,
-            "value": self.value.toDictionary()
+            "value": hex(self.value)
         }
