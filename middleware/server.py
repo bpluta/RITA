@@ -29,7 +29,7 @@ def validate(json, keys):
 @server.route("/")
 def index():
     return render_template("index.html")
-    
+
 @socketio.on('commits')
 def getCommits(request):
     data = parseJSON(request)
@@ -40,18 +40,38 @@ def getCommits(request):
     index = data["index"]
     amount = data["amount"]
 
-    commits = tracer.getNextCommits(amount,index)
+    fetchNext = True
+    if "direction" in data:
+        if data["direction"] == "previous":
+            fetchNext = False
+
+    includeIndex = True
+    if "includeIndex" in data:
+        if data["includeIndex"] == False:
+            includeIndex = False
+
+    commits = []
+    if fetchNext:
+        commits = tracer.getNextCommits(amount,index,includeIndex)
+    else:
+        commits = tracer.getPreviousCommits(amount,index,includeIndex)
 
     commitsArray = []
     for index in range(0,len(commits)):
         commit = decoder.decodeCommit(commits[index])
+        commit.printCommit()
         commitsArray.append(commit.toDictionary())
 
     hasMore = False
     if len(commits):
-        index = commits[-1].index
-        if index:
-            hasMore = tracer.hasMoreAfter(index)
+        if fetchNext:
+            index = commits[-1].index
+            if index:
+                hasMore = tracer.hasMoreAfter(index)
+        else:
+            index = commits[0].index
+            if index:
+                hasMore = tracer.hasMoreBefore(index)
 
     response = { "commits": commitsArray, 'hasMore': hasMore }
     socketio.emit('commits', json.dumps(response))

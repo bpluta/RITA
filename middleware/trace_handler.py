@@ -10,8 +10,11 @@ class Trace:
         self.index = index
         self.traces = []
 
-    def addTrace(self, bytes):
+    def appendTrace(self, bytes):
         self.traces.append(bytes)
+
+    def prependTrace(self, bytes):
+        self.traces.insert(0, bytes)
 
     def isEmpty(self):
         if self.traces:
@@ -60,7 +63,7 @@ class TraceHandler:
                 commits.append(commit)
                 commit = Trace(currentIndex)
 
-            commit.addTrace(trace)
+            commit.prependTrace(trace)
 
             position = self.getPreviousLine(position)
 
@@ -96,7 +99,7 @@ class TraceHandler:
                 commits.append(commit)
                 commit = Trace(currentIndex)
 
-            commit.addTrace(trace)
+            commit.appendTrace(trace)
 
             position = self.getNextLine(position)
 
