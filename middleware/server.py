@@ -71,6 +71,29 @@ def getMemory(request):
     response = { "memory": memoryArray, 'lastIndex': lastIndex }
     socketio.emit('commits', json.dumps(response))
 
+@socketio.on('registers')
+def getRegisters(request):
+    data = parseJSON(request)
+
+    if not validate(data, ["index"]):
+        response = { 'error': 'missing values' }
+        socketio.emit('registers', str(response))
+        return
+
+    index = data["index"]
+
+    registersArray = {}
+    registers = decoder.getAllRegisters(index, tracer)
+    for name in registers:
+        value = registers[name]
+        if value != None:
+            registersArray[name] = hex(value)
+        else:
+            registersArray[name] = None
+
+    response = { "registers": registersArray }
+    socketio.emit('registers', json.dumps(response))
+
 @socketio.on('commits')
 def getCommits(request):
     data = parseJSON(request)
@@ -117,6 +140,8 @@ def getCommits(request):
 
     response = { "commits": commitsArray, 'hasMore': hasMore }
     socketio.emit('commits', json.dumps(response))
+
+
 
 if __name__ == "__main__":
     server.run()
