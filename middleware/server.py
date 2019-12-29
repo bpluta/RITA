@@ -8,7 +8,7 @@ import json
 
 TRACE_FILE_PATH = "../traces/trace"
 
-server = Flask(__name__, static_folder="../frontend/dist", template_folder="../frontend")
+server = Flask(__name__, static_folder="../frontend/build/static", template_folder="../frontend/build")
 socketio = SocketIO(server)
 
 decoder = Decoder()
@@ -140,8 +140,6 @@ def getCommits(request):
 
     response = { "commits": commitsArray, 'hasMore': hasMore }
     socketio.emit('commits', json.dumps(response))
-
-
 
 if __name__ == "__main__":
     server.run()

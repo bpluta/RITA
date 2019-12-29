@@ -1,0 +1,39 @@
+html {
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+body {
+  margin: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+.List {
+  border: 1px solid #d9dddd;
+}
+
+.TraceColumn {
+    align-tems: "center";
+    justify-content: "center";
+    padding-left: 20;
+    padding-right: 20;
+    font-family: "Andale Mono", AndaleMono, monospace;
+    font-size: 14;
+}
+
+.ListItemEven,
+.ListItemOdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ListItemEven, ul:nth-child(2) {
+    background-color: #f0f8f8;
+}
