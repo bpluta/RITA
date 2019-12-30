@@ -10,6 +10,8 @@ export default class TraceList extends React.Component {
 
         this.state = {
             items: props.items,
+            selectedIndex: props.selectedIndex,
+            onSelect: props.onSelect
         }
     }
 
@@ -27,7 +29,10 @@ export default class TraceList extends React.Component {
       }
 
       return (
-          <div className={index % 2 ? "ListItemOdd" : "ListItemEven"} style={style}>
+          <div className={(index + 1) == this.props.selectedIndex ? "ListSelectedItem" : "ListItem"}
+                style={style}
+                onClick={ () => this.state.onSelect(index + 1) }
+            >
             <TraceRow index={index + 1} address={address ? address : "Loading..."} content={item ? `${item.instruction.value}` : "Loading..."}/>
           </div>
       );
@@ -51,6 +56,7 @@ export default class TraceList extends React.Component {
                       width={width}
                       ref={ref}
                       onItemsRendered={onItemsRendered}
+                      selectedIndex={this.props.selectedIndex}
                     >
                       {this.Row}
                     </List>

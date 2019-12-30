@@ -1,5 +1,6 @@
 import React, { PureComponent } from "react";
 import TraceList from "./TraceList";
+import RegisterTable from "./RegisterTable";
 import Api from "./Api";
 import "./style.css";
 
@@ -13,7 +14,8 @@ class App extends PureComponent {
         this.state = {
             items: {},
             requestCache: {},
-            amountOfItems: 1000
+            amountOfItems: 1000,
+            selectedIndex: null
         }
 
         Api.registerCommitHandler((data) => {
@@ -62,14 +64,29 @@ class App extends PureComponent {
         return Api.getCommits(visibleStartIndex, length, "next", false)
     };
 
+    onSelect = (index) => {
+      this.setState({
+        selectedIndex: index
+      })
+    }
+
   render() {
     return (
-        <TraceList
-            items={this.state.items}
-            itemCount={this.state.amountOfItems}
-            isItemLoaded={this.isItemLoaded}
-            loadMoreItems={this.loadMoreTraces}
-        />
+        <div style={{display: 'flex', flex: '1', flexDirection: 'row', height: "100%"}}>
+          <div style={{flex: '1'}}>
+            <TraceList
+                selectedIndex={this.state.selectedIndex}
+                onSelect={this.onSelect}
+                items={this.state.items}
+                itemCount={this.state.amountOfItems}
+                isItemLoaded={this.isItemLoaded}
+                loadMoreItems={this.loadMoreTraces}
+            />
+          </div>
+          <div style={{width: 300}}>
+              <RegisterTable />
+          </div>
+        </div>
     );
   }
 }

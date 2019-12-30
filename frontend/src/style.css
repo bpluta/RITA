@@ -1,6 +1,6 @@
 html {
   font-family: sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 body {
@@ -24,16 +24,26 @@ body,
     padding-left: 20;
     padding-right: 20;
     font-family: "Andale Mono", AndaleMono, monospace;
-    font-size: 14;
 }
 
-.ListItemEven,
-.ListItemOdd {
+.ListItem,
+.ListSelectedItem {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ListItemEven, ul:nth-child(2) {
+.ListSelectedItem {
     background-color: #f0f8f8;
+}
+
+.RegisterRow {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  height: 35px;
+  align-items: center;
+  justify-content: center;
+  font-family: "Andale Mono", AndaleMono, monospace;
+  font-size: 16px;
 }

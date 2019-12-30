@@ -4,7 +4,6 @@ const socket = openSocket("http://localhost:5000/");
 
 export default class Api {
     static registerCommitHandler(callback) {
-        console.log("register handler")
         socket.on('commits', callback)
     }
 
@@ -43,7 +42,6 @@ export default class Api {
             direction: direction,
             includeIndex: includeIndex,
         }
-        console.log(request)
         return Api.emit("commits", JSON.stringify(request))
     }
 
@@ -74,12 +72,7 @@ export default class Api {
                 reject('No socket connection.');
             } else {
                 socket.emit(event, data, (response) => {
-                    if (response.error) {
-                        console.error(response.error);
-                        reject(response.error);
-                    } else {
-                        resolve();
-                    }
+                  resolve()
                 });
             }
         });
