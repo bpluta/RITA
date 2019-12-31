@@ -15,7 +15,10 @@ class App extends PureComponent {
             items: {},
             requestCache: {},
             amountOfItems: 1000,
-            selectedIndex: null
+            selectedIndex: null,
+            selectedItem: null,
+            currentCommit: null,
+            currentRegisters: null
         }
 
         Api.registerCommitHandler((data) => {
@@ -34,6 +37,14 @@ class App extends PureComponent {
             this.setState({
                 items: items,
                 amountOfItems: itemCount
+            })
+        })
+        Api.registerRegisterHandler((data) => {
+            let json = JSON.parse(data)
+            let registers = json.registers
+            this.setState({
+                currentRegisters: registers,
+                currentCommit: this.state.items[this.state.selectedIndex]
             })
         })
     }
@@ -68,6 +79,7 @@ class App extends PureComponent {
       this.setState({
         selectedIndex: index
       })
+      Api.getRegisters(index)
     }
 
   render() {
@@ -84,7 +96,10 @@ class App extends PureComponent {
             />
           </div>
           <div style={{width: 300}}>
-              <RegisterTable />
+              <RegisterTable
+                  currentCommit={this.state.currentCommit}
+                  currentRegisters={this.state.currentRegisters}
+                />
           </div>
         </div>
     );
