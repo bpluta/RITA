@@ -1,11 +1,11 @@
 import React from 'react';
 
-export default class RegisterRow extends React.Component {
+export default class MemoryRow extends React.Component {
   render() {
     return(
       <div className={this.props.isSelected ? "RegisterSelectedRow" : "RegisterRow"}>
           <div className={"TraceColumn"} style={{flex: '1'}}>
-              {this.props.register}
+              {this.props.address}
           </div>
           <div className={"TraceColumn"} style={{flex: '1'}}>
               {this.props.value}

@@ -7,7 +7,7 @@ import TraceRow from "./TraceRow";
 export default class TraceList extends React.Component {
     constructor(props) {
         super(props)
-
+        this.listReference = React.createRef();
         this.state = {
             items: props.items,
             selectedIndex: props.selectedIndex,
@@ -35,35 +35,39 @@ export default class TraceList extends React.Component {
             >
             <TraceRow index={index + 1} address={address ? address : "Loading..."} content={item ? `${item.instruction.value}` : "Loading..."}/>
           </div>
-      );
-    };
+      )
+    }
 
     render() {
         return (
-            <AutoSizer>
-              {({ height, width }) => (
-                <InfiniteLoader
-                  isItemLoaded={this.props.isItemLoaded}
-                  loadMoreItems={this.props.loadMoreItems}
-                  itemCount={this.props.itemCount}
-                >
-                  {({ onItemsRendered, ref }) => (
-                    <List
-                      className="List"
-                      height={height}
+                <AutoSizer>
+                  {({ height, width }) => (
+                    <InfiniteLoader
+                      isItemLoaded={this.props.isItemLoaded}
+                      loadMoreItems={this.props.loadMoreItems}
                       itemCount={this.props.itemCount}
-                      itemSize={25}
-                      width={width}
-                      ref={ref}
-                      onItemsRendered={onItemsRendered}
-                      selectedIndex={this.props.selectedIndex}
                     >
-                      {this.Row}
-                    </List>
+                      {({ onItemsRendered, ref }) => {
+                          this.props.onRef(this.listReference)
+                          return (
+                              <List
+                                className="List"
+                                height={height}
+                                itemCount={this.props.itemCount}
+                                itemSize={25}
+                                width={width}
+                                ref={this.listReference}
+                                onItemsRendered={onItemsRendered}
+                                selectedIndex={this.props.selectedIndex}
+                              >
+                                {this.Row}
+                              </List>
+                          )
+
+                      }}
+                    </InfiniteLoader>
                   )}
-                </InfiniteLoader>
-              )}
-            </AutoSizer>
+                </AutoSizer>
         )
     }
 }

@@ -53,7 +53,6 @@ export default class Api {
         let request = {
             index: index
         }
-        console.log(request)
         return Api.emit("registers", JSON.stringify(request))
     }
 
@@ -62,7 +61,6 @@ export default class Api {
             index: index,
             type: type,
         }
-        console.log(request)
         return Api.emit("hasMore", JSON.stringify(request))
     }
 
