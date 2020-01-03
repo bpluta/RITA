@@ -69,7 +69,7 @@ def getMemory(request):
             memoryArray[key].append(commits[index].toDictionary())
 
     response = { "memory": memoryArray, 'lastIndex': lastIndex }
-    socketio.emit('commits', json.dumps(response))
+    socketio.emit('memoryDump', json.dumps(response))
 
 @socketio.on('registers')
 def getRegisters(request):

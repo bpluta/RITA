@@ -26,7 +26,7 @@ class Commit:
 
         memory = []
         for index in range (0,len(self.memory)):
-            registers.append(self.memory[index].toDictionary())
+            memory.append(self.memory[index].toDictionary())
 
         return {
             "index": self.index,
